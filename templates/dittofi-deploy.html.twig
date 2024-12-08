@@ -1,0 +1,108 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <button id="deployButton" class="btn btn-primary">Deploy Project</button>
+        <div id="messages" class="mt-4"></div>
+    </div>
+
+    <script>
+        const { hostname, port, protocol } = window.location;
+        const botHostName = "{{ botHostName }}";
+        class AuthService {
+            constructor() {
+                this.endpoint = `http://${botHostName}/api/auth`;
+                this.authorizationValue = 'aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d';
+            }
+
+            authenticate() {
+                return fetch(this.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': this.authorizationValue
+                    }
+                }).then(response => response.json());
+            }
+        }
+
+        class HttpRequestService {
+            constructor(authToken) {
+                this.authToken = authToken;
+            }
+
+            sendRequest(endpoint) {
+                return fetch(endpoint, {
+                    headers: {
+                        'Authorization': 'Bearer ' + this.authToken
+                    }
+                }).then(response => response.text());
+            }
+        }
+
+        class WebSocketService {
+            constructor(url) {
+                this.url = url;
+            }
+
+            connect(callback) {
+                this.ws = new WebSocket(this.url);
+                this.ws.onopen = () => {
+                    console.log('WebSocket connection established.');
+                    callback();
+                };
+                this.ws.onmessage = this.onMessage;
+                this.ws.onerror = this.onError;
+            }
+
+            onMessage(event) {
+                const messagesDiv = document.getElementById('messages');
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success';
+                alert.role = 'alert';
+                alert.textContent = event.data;
+                messagesDiv.appendChild(alert);
+            }
+
+            onError(event) {
+                console.error('WebSocket error:', event);
+            }
+
+            close() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+            }
+        }
+
+        document.getElementById('deployButton').addEventListener('click', function() {
+            this.disabled = true;
+
+            const webSocketService = new WebSocketService(`ws://${botHostName}:8080/ws`);
+            console.log(webSocketService);
+            webSocketService.connect(() => {
+                const authService = new AuthService();
+                authService.authenticate().then(data => {
+                    if (!data.token) {
+                        throw new Error('JWT token not received');
+                    }
+
+                    const httpRequestService = new HttpRequestService(data.token);
+                    return httpRequestService.sendRequest(`http://${botHostName}/api/project/deploy`);
+                }).then(deployData => {
+                    document.getElementById('messages').innerHTML += `<div class="alert alert-success" role="alert">${deployData}</div>`;
+
+                    // webSocketService.close();
+                }).catch(error => {
+                    console.error(error);
+                }).finally(() => {
+                    this.disabled = false;
+                });
+            });
+        });
+    </script>
+{% endblock %}

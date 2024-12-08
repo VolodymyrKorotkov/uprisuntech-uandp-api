@@ -1,0 +1,1 @@
+{"version":1,"defects":{"App\\Tests\\Unit\\UserService\\GoogleHandleStrategyTest::testSupport":8,"App\\Tests\\Unit\\UserService\\GoogleHandleStrategyTest::testHandleOauthUser":8,"App\\Tests\\Unit\\UserService\\GovIdUserHandleStrategyTest::testSupport":8,"App\\Tests\\Unit\\UserService\\GovIdUserHandleStrategyTest::testHandleOauthUser":8},"times":[]}

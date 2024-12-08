@@ -1,0 +1,1 @@
+docker-compose exec keycloak /opt/keycloak/bin/kc.sh export --dir /app/docker/keycloak/realms

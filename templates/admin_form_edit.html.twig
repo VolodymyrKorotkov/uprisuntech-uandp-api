@@ -1,0 +1,27 @@
+{% extends '@EasyAdmin/crud/edit.html.twig' %}
+
+{% set task = entity.instance %}
+
+{% block main %}
+    {{ parent() }}
+
+    <div id="formio"
+         data-token="{{ getFormioJwtToken() }}"
+    ></div>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            const formContainer = document.getElementById('formio')
+            const formUrl = '{{ globalFormioUrl }}/{{ entity.instance.formKey }}'
+            const formOptions = {
+                readOnly: true
+            }
+
+            Formio.setProjectUrl('{{ globalFormioUrl }}')
+            Formio.setBaseUrl('{{ globalFormioUrl }}')
+            Formio.setToken(formContainer.dataset.token)
+
+            Formio.createForm(formContainer, formUrl, formOptions)
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,20 @@
+image: atlassian/default-image:3
+
+pipelines:
+  branches:
+    dev:
+      - step:
+          name: Build
+          script:
+            - echo "Build"
+            - ssh -T $SSH_DEV_USER@$SSH_DEV_SERVER $SSH_BUILD_SH_PATH
+
+    stage:
+      - step:
+          name: Build
+          script:
+            - echo "Build"
+            - ssh -T $SSH_STAGE_USER@$SSH_STAGE_SERVER $SSH_BUILD_SH_PATH
+
+options:
+  docker: true

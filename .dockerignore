@@ -1,0 +1,6 @@
+/.git
+/.idea
+/docker/db_data
+/docker/postgres
+/docker/nginx
+/docker/bitbucket-pipelines.yml

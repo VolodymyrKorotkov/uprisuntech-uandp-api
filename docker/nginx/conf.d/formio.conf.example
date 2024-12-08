@@ -1,0 +1,51 @@
+server {
+  listen 3000 ssl http2;
+  listen [::]:3000 ssl http2;
+  server_name localhost stage-api.uprisun.dev auth.uandp.com.ua dev-api.uprisun.dev;
+  client_max_body_size 20M;
+  client_body_buffer_size 20M;
+  location / {
+    proxy_set_header    Host $host;
+    proxy_set_header    X-Real-IP $remote_addr;
+    proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto $scheme;
+    proxy_pass          https://http;
+    proxy_read_timeout  300;
+    proxy_redirect      https://http https://$host;
+  }
+
+   ssl_certificate /var/www/html/secret/ssl/nginx.crt;
+   ssl_certificate_key /var/www/html/secret/ssl/nginx.key;
+   ssl_session_timeout 1d;
+   ssl_session_cache shared:SSL:50m;
+   ssl_session_tickets off;
+   add_header Strict-Transport-Security max-age=15768000;
+   ssl_stapling on;
+   ssl_stapling_verify on;
+}
+
+server {
+  listen 3001 ssl http2;
+  listen [::]:3001 ssl http2;
+  server_name localhost stage-api.uprisun.dev auth.uandp.com.ua dev-api.uprisun.dev;
+  client_max_body_size 20M;
+  client_body_buffer_size 20M;
+  location / {
+    proxy_set_header    Host $host;
+    proxy_set_header    X-Real-IP $remote_addr;
+    proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto $scheme;
+    proxy_pass          http://formio:3000;
+    proxy_read_timeout  300;
+    proxy_redirect      http://formio:3000 https://$host;
+  }
+
+   ssl_certificate /var/www/html/secret/ssl/nginx.crt;
+   ssl_certificate_key /var/www/html/secret/ssl/nginx.key;
+   ssl_session_timeout 1d;
+   ssl_session_cache shared:SSL:50m;
+   ssl_session_tickets off;
+   add_header Strict-Transport-Security max-age=15768000;
+   ssl_stapling on;
+   ssl_stapling_verify on;
+}

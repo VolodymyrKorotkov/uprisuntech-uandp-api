@@ -1,0 +1,102 @@
+security:
+  # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+  password_hashers:
+    Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+  # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+  access_decision_manager:
+    strategy: unanimous
+  #    allow_if_all_abstain: true
+
+  providers:
+    app_user_provider:
+      id: app.security.keycloak_user_provider
+    app_jwt_provider:
+      lexik_jwt:
+        class: App\Security\AppUser
+  role_hierarchy:
+    ROLE_SUPER_ADMIN:
+      - ROLE_CAMUNDA_TASK_ALLOW_ALL
+      - ROLE_OPERATOR
+      - ROLE_ID_GOV_UA
+      - ROLE_ENGINEER
+      - ROLE_CAMUNDA
+      - ROLE_CAMUNDA_TASK
+      - ROLE_NATIVE_STRATEGY
+    ROLE_CAMUNDA:
+      - ROLE_FORMIO
+      - ROLE_FORMIO_CREATE
+      - ROLE_FORMIO_VIEW
+      - ROLE_FORMIO_EDIT
+      - ROLE_FORMIO_DELETE
+      - ROLE_APPLICATION
+      - ROLE_APPLICATION_TASK
+      - ROLE_CAMUNDA_STRATEGY
+      - ROLE_APPLICATION_SUBMISSION
+      - ROLE_APPLICATION_OWNER_FOR_ALL
+      - ROLE_CAMUNDA_TASK
+    ROLE_OPERATOR:
+      - ROLE_ORGANIZATION_JOIN_TASK
+      - ROLE_USERS_LIST
+    ROLE_WITHOUT_ORGANIZATION:
+      - ROLE_ORGANIZATION_JOIN_FLOW
+      - ROLE_APPLICATION_TASK
+    ROLE_MUNICIPALITY_HEAD:
+      - ROLE_ORGANIZATION_JOIN_INVITE
+      - ROLE_ORGANIZATION_ROLE
+      - ROLE_ORGANIZATION_ROLE_DELETE
+      - ROLE_ORGANIZATION
+      - ROLE_APPLICATION_TASK
+    ROLE_MUNICIPALITY_MANAGER:
+      - ROLE_ORGANIZATION
+      - ROLE_APPLICATION_TASK
+    ROLE_ENGINEER:
+      - ROLE_APPLICATION_TASK_CONFIRM
+
+  firewalls:
+    admin:
+      provider: app_user_provider
+      pattern: ^/(admin|api/admin)
+      form-login:
+        login_path: app.account.login
+        check_path: app.account.login
+        default_target_path: app.account.index
+      #        provider: app_user_email_provider
+      #                enable_csrf: true
+      custom_authenticators:
+        - App\Security\OauthCodeAccountLoginAuthenticator
+
+      logout:
+        path: app.account.logout
+        target: app.account.login
+
+    api-token:
+      access_token:
+        token_handler: App\Security\UserToken\UserTokenHandler
+        token_extractors:
+          - 'App\Security\UserToken\UserTokenExtractor'
+      provider: app_user_provider
+      pattern: ^/api/account/applications/submission_saved_on_formio_webhook
+      stateless: true
+
+    api:
+      provider: app_jwt_provider
+      pattern: ^/(api|formio)/
+      stateless: true
+      entry_point: jwt
+      jwt: ~
+
+    dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
+      security: false
+
+  access_control:
+    ######################### deprecated #################
+    - { path: ^/api/v1/auth/refresh-token, roles: PUBLIC_ACCESS }
+    - { path: ^/api/v1/auth/token, roles: PUBLIC_ACCESS }
+    - { path: ^/api/v1/users/profile, roles: ROLE_USER }
+    - { path: ^/api/v1/users/profile, roles: ROLE_USER }
+    ######################### deprecated #################
+
+    - { path: ^/(api/(docs|public)|admin/login|formio|admin/test-formio), roles: PUBLIC_ACCESS }
+    - { path: ^/api/account, roles: ROLE_USER }
+    - { path: ^/(api|admin), roles: ROLE_ADMIN }

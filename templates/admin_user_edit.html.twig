@@ -1,0 +1,46 @@
+{% extends '@EasyAdmin/crud/edit.html.twig' %}
+
+{% block page_actions %}
+
+    <button class="action-syncToKeycloak btn btn-secondary" data-action-name="syncToKeycloak" form="edit-User-form" data-url="{{ path('admin.sync_to_keycloak') }}">
+        <span class="btn-label"><i class="fa-solid fa-rotate"></i> <span class="action-label">Sync to Keycloak</span></span>
+    </button>
+
+    {{ parent() }}
+
+{% endblock %}
+
+{% block head_javascript %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.querySelector('.action-syncToKeycloak');
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const userIdentifier = document.querySelector('input[name="User[uuid]"]').value;
+                    const url = this.getAttribute('data-url');
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ identity: userIdentifier }),
+                    })
+                        .then(response => {
+                            if(response.ok) {
+                                alert("Synchronization was successful.");
+                            } else {
+                                throw new Error('Failed to sync');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                            alert("Synchronization error.");
+                        });
+                });
+            }
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title 'Tasks' %}
+{% block main %}
+
+
+    <section class="content-header">
+        <div class="content-header-title">
+        </div>
+        <div class="page-actions">
+
+            {% if type.allowStartProcess %}
+                <div class="global-actions">
+                    <a class=" action-new btn btn-primary"
+                       href="{{ ea_url().setRoute('admin.camunda_tasks.start', {'typeId': type.id}) }}">
+                        <span class="action-label">Start new process</span>
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+    </section>
+
+    <table class="table datagrid">
+        <thead>
+        <tr>
+            <th class="field-virtual header-for-field-text text-">ID</th>
+            <th class="field-virtual header-for-field-text text-">processInstanceId</th>
+            <th class="field-virtual header-for-field-text text-">Name</th>
+            <th class="field-virtual header-for-field-text text-">assignee</th>
+            <th class="field-virtual header-for-field-text text-">parentTaskId</th>
+            <th class="field-virtual header-for-field-text text-">priority</th>
+            <th class="field-virtual header-for-field-text text-">formKey</th>
+            <th class="field-virtual header-for-field-text text-">created</th>
+            <th class="field-virtual header-for-field-text text-">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td>{{ task.processInstanceId }}</td>
+                <td>{{ task.name }}</td>
+                <td>{{ task.assignee }}</td>
+                <td>{{ task.parentTaskId }}</td>
+                <td>{{ task.priority }}</td>
+                <td>{{ task.formKey }}</td>
+                <td>{{ task.created }}</td>
+
+                <td class="actions actions-as-dropdown">
+                    <div class="dropdown dropdown-actions">
+                        <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="21" width="21" fill="none"
+                                 viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                            </svg>
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-right">
+                            {% if canAssignCamundaTask(task) %}
+                                <a
+                                        class="dropdown-item action-detail"
+                                        href="{{ ea_url().setRoute('admin.camunda_tasks.assign_me', { id: task.id, typeId: type.id }) }}"
+                                        data-action-name="detail">
+                                    <span class="action-label">Assign to me</span>
+                                </a>
+                            {% endif %}
+                                <a
+                                        class="dropdown-item action-detail"
+                                        href="{{ ea_url().setRoute('admin.camunda_tasks.submission', { id: task.id, typeId: type.id }) }}"
+                                        data-action-name="detail">
+                                    <span class="action-label">go to submission</span>
+                                </a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

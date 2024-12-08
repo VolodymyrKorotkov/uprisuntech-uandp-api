@@ -1,0 +1,150 @@
+version: "3.8"
+
+services:
+  http:
+    build:
+      context: docker/nginx
+      dockerfile: Dockerfile
+    ports:
+      - ${APP_HTTPS_PORT:-443}:443
+    depends_on:
+      - php
+    working_dir: /var/www/html
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./:/var/www/html
+    networks:
+      - app
+    env_file:
+      - .env
+
+  php:
+    build:
+      context: docker/php
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/var/www/html
+      - ./uploads:/var/www/html/public/uploads
+      - ./docker/php/docker-fpm.ini:/usr/local/etc/php/conf.d/docker-fpm.ini
+      - ./docker/php/eusphpe.ini:/usr/local/etc/php/conf.d/eusphpe.ini
+      - ./docker/php/osplm.ini:/usr/lib/php/eusphpe/osplm.ini
+    depends_on:
+      - db
+    networks:
+      - app
+    env_file:
+      - .env
+
+  db:
+    build:
+      context: docker/postgres
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DATABASE=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data
+    volumes:
+      - ./.docker_data/api_postgres:/var/lib/postgresql/data:rw
+      - ./:/app
+    working_dir: /app
+    networks:
+      - app
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo:4.1
+    volumes:
+      - ./.docker_data/formio_mongo:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD
+    env_file:
+      - .env
+    networks:
+      - app
+
+  keycloak_db:
+    image: postgres
+    volumes:
+      - ./.docker_data/keycloak_postgres:/var/lib/postgresql/data:rw
+      - ./:/app
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_DB_DATABASE}
+      POSTGRES_USER: ${KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    working_dir: /app
+    networks:
+      - app
+
+  keycloak:
+    build:
+      context: docker/keycloak
+      args:
+        KEYCLOAK_VERSION: 23.0.3
+    command:
+      - start
+      - --import-realm
+      - '--https-certificate-file=/app/secret/ssl/nginx.crt'
+      - '--https-certificate-key-file=/app/secret/ssl/nginx.key'
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_DB_URL_PORT: ${KEYCLOAK_DB_PORT:-5432}
+      KC_DB_URL_HOST: ${KEYCLOAK_DB_ADDR:-keycloak_db}
+      KEYCLOAK_FRONTEND_URL: ${KEYCLOAK_URL}/auth
+      UANDP_APP_ORIGIN: ${APP_URL}
+      KC_HOSTNAME_URL: ${KEYCLOAK_URL}
+      TRACKED_EVENTS: "ACCOUNT_UPDATE"
+      EVENTS_WEBHOOK_URL: ${KEYCLOAK_EVENTS_WEBHOOK_URL}
+      ENABLE_WEBHOOKS: ${KEYCLOAK_ENABLE_WEBHOOKS:-false}
+      KC_HTTP_ENABLED: ${KEYCLOAK_HTTP_ENABLED:-true}
+      KC_HOSTNAME_STRICT_HTTPS: ${KEYCLOAK_HOSTNAME_STRICT_HTTPS:-false}
+      KC_HOSTNAME_STRICT: ${KEYCLOAK_HOSTNAME_STRICT:-false}
+      UANDP_APP_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET}
+    ports:
+      - "8443:8443"
+    depends_on:
+      - keycloak_db
+    volumes:
+      - ./:/app
+      - ./docker/keycloak/realms:/opt/keycloak/data/import
+      - ./docker/keycloak/providers:/opt/keycloak/providers
+    networks:
+      - app
+
+  s3:
+    build:
+      context: docker/minio
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./.docker_data/s3:/data
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - app
+
+  node:
+    image: node:21
+    volumes:
+      - ./:/app
+    working_dir: /app
+
+networks:
+  app:

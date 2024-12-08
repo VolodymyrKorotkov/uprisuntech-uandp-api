@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% block head %}
+        <link rel="stylesheet" href="style.css"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.full.min.css">
+
+        <title>
+            {% block title %}Demo Formio{% endblock %}
+        </title>
+    {% endblock %}
+</head>
+<body>
+<div id="container text-center" class="container">
+    {% if submissionId %}
+        {% set formSubmissionUrl = globalFormioUrl ~ '/' ~ formKey ~ '/submission/' ~ submissionId %}
+    {% else %}
+        {% set formSubmissionUrl = globalFormioUrl ~ '/' ~ formKey ~ '/submission/' %}
+    {% endif %}
+
+    <h1>{{ form.title }}</h1>
+
+    <div>
+        {% for s in submissions %}
+            <a href="{{ path('test_formio', {'formKey': formKey, 'submissionId': s.id}) }}">{{ s.id }} ({{ s.modified }})</a>
+        {% endfor %}
+    </div>
+    <div
+            id="formio"
+            data-url="{{ formSubmissionUrl }}"
+            data-token="{{ getFormioJwtToken() }}"
+            data-readonly = "{{ readOnly }}"
+    ></div>
+
+    <script src="https://cdn.form.io/formiojs/formio.full.min.js"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            const formContainer = document.getElementById('formio')
+            const formUrl = formContainer.dataset.url
+            const formOptions = {
+                readOnly: formContainer.dataset.readonly
+            }
+
+            Formio.setProjectUrl('{{ globalFormioUrl }}')
+            Formio.setBaseUrl('{{ globalFormioUrl }}')
+            Formio.setToken(null)
+            Formio.createForm(
+                formContainer,
+                formUrl,
+                formOptions
+            )
+        }
+    </script>
+</div>
+</body>
+</html>

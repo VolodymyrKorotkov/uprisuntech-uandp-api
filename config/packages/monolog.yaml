@@ -1,0 +1,64 @@
+monolog:
+    channels:
+        - deprecation
+        - organization_invite
+        - formio_save_submission_webhook
+
+when@dev:
+    monolog:
+        handlers:
+            main:
+                type: stream
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug
+                channels: ["!event"]
+            organization_invite:
+                type: stream
+                path: "%kernel.logs_dir%/organization_invite.log"
+                level: debug
+                channels: [ "organization_invite" ]
+            formio_save_submission_webhook:
+                type: stream
+                path: "%kernel.logs_dir%/formio_save_submission_webhook.log"
+                level: debug
+                channels: [ "formio_save_submission_webhook" ]
+            console:
+                type: console
+                process_psr_3_messages: false
+                channels: ["!event", "!doctrine", "!console"]
+
+when@test:
+    monolog:
+        handlers:
+            main:
+                type: fingers_crossed
+                action_level: error
+                handler: nested
+                excluded_http_codes: [404, 405]
+                channels: ["!event"]
+            nested:
+                type: stream
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug
+
+when@prod:
+    monolog:
+        handlers:
+            filterInfo:
+                type: filter
+                handler: stdoutHandler
+                max_level: 400
+                channels: [ "!event", '!deprecation', "!doctrine", "!request" ]
+            filterError:
+                type: filter
+                handler: errorHandler
+                min_level: 500
+                channels: [ "!event", '!deprecation', "!doctrine" ]
+            stdoutHandler:
+                type: stream
+                path: "php://stdout"
+                formatter: 'monolog.formatter.json'
+            errorHandler:
+                type: stream
+                path: "php://stderr"
+                formatter: 'monolog.formatter.json'

@@ -1,0 +1,26 @@
+Generating a certificate via cerbot and set env variables ()
+```shell
+sh ./docker/generate_ssl.sh
+```
+
+create .env file and Install(init) project (example see on [.env.example](.env.example))
+```shell
+sh install.sh
+```
+
+Go to keycloak ($KEYCLOAK_URL) and login as admin (Log: $KEYCLOAK_ADMIN, pass: $KEYCLOAK_ADMIN_PASSWORD).
+Choice "production" realm and get RS256 public key on "Realm settings" -> Keys.
+Copy the public key to file {project_dir}/secret/jwt/public.pem. Then run command to format public key
+```shell
+docker-compose exec php bin/console app:format_public_key:RS256_string
+```
+
+Then create admin and load fixtures
+```shell
+docker-compose exec php bin/console app:create_admin
+docker-compose exec php bin/console doctrine:fixture:load --no-interaction
+```
+
+Admin creds
+login: $KEYCLOAK_ADMIN
+pass:  $KEYCLOAK_ADMIN_PASSWORD

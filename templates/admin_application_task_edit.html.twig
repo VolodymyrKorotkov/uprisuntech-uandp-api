@@ -1,0 +1,41 @@
+{% extends '@EasyAdmin/crud/edit.html.twig' %}
+
+{% set submissionId = getNativeTaskProcessSubmissionId(entity.instance) %}
+{% set task = entity.instance %}
+{% set formSubmissionUrl = globalFormioUrl ~ '/' ~ entity.instance.form.formKey ~ '/submission/' ~ submissionId %}
+
+{% block main %}
+    {{ parent() }}
+
+    <div
+            id="formio"
+            data-url="{{ formSubmissionUrl }}"
+            data-token="{{ getFormioJwtToken() }}"
+            data-readonly = "{{ isLockedSubmissionEdit(submissionId) }}"
+    ></div>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            const formContainer = document.getElementById('formio')
+            const formUrl = formContainer.dataset.url
+            const formOptions = {
+                readOnly: formContainer.dataset.readonly
+            }
+
+            Formio.setProjectUrl('{{ globalFormioUrl }}')
+            Formio.setBaseUrl('{{ globalFormioUrl }}')
+            Formio.setToken(formContainer.dataset.token)
+            Formio.createForm(
+                formContainer,
+                formUrl,
+                formOptions
+            ).then(
+                form => {
+                    form.on('submitDone', (submission) => {
+                        window.location.reload();
+                    })
+                }
+            )
+        }
+    </script>
+{% endblock %}

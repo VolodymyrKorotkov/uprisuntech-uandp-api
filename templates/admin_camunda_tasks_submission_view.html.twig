@@ -1,0 +1,109 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}
+
+    <section class="content-header">
+        <div class="content-header-title">
+            <h1 class="title">
+                {{ task.title }}
+            </h1>
+        </div>
+
+        <div class="page-actions">
+
+            {% if task.multipleSubmissions %}
+
+                {% for sId in task.submissionIdsList  %}
+                    <a
+                            class="action-saveAndReturn btn {% if (sId == submissionId) %}btn-default{% else %}btn-primary{% endif %} action-save"
+                            type="button"
+                            {% if (sId != submissionId) %}
+                                href="{{ ea_url().setRoute('admin.camunda_tasks.submission', { id: task.id, typeId: typeId, submissionId: sId }) }}"
+                            {% endif %}
+                    >
+                <span class="btn-label">
+                    <span class="action-label">{{ sId }}</span>
+                </span>
+                    </a>
+                {% endfor %}
+
+                {% if not task.lockForUpdate %}
+                    <a
+                            class="action-saveAndReturn btn btn-primary action-save"
+                            type="button"
+                            href="{{ ea_url().setRoute('admin.camunda_tasks.submission_add_new', { id: task.id, typeId: typeId}) }}"
+                    >
+                <span class="btn-label">
+                    <span class="action-label">Add new submission</span>
+                </span>
+                    </a>
+                {% endif %}
+
+            {% endif %}
+
+            {% if not task.lockForUpdate %}
+                <a
+                        class="action-saveAndReturn btn btn-primary action-save"
+                        type="button"
+                        href="{{ completeUrl }}"
+                >
+                <span class="btn-label">
+                    <span class="action-label">Complete</span>
+                </span>
+                </a>
+            {% endif %}
+
+            {% if task.needAssign %}
+                <a
+                        class="action-saveAndReturn btn btn-primary action-save"
+                        type="button"
+                        href="{{ assignMeUrl }}"
+                >
+                <span class="btn-label">
+                    <span class="action-label">Assign Me</span>
+                </span>
+                </a>
+
+            {% endif %}
+
+        </div>
+    </section>
+
+{% endblock %}
+
+{% set formSubmissionUrl = globalFormioUrl ~ '/' ~ task.form.formKey ~ '/submission/' ~ submissionId %}
+
+{% block main %}
+    {# <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" crossorigin="anonymous"> #}
+    <link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.form.min.css" crossorigin="anonymous">
+    <script src="https://cdn.form.io/formiojs/formio.form.min.js" crossorigin="anonymous"></script>
+
+    <div
+            id="formio"
+            data-url="{{ formSubmissionUrl }}"
+            data-token="{{ getFormioJwtToken() }}"
+            data-lock_for_update="{{ task.lockForUpdate ? '1' : '0' }}"
+    ></div>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            const formContainer = document.getElementById('formio')
+            const formUrl = formContainer.dataset.url
+            const formOptions = {
+                readOnly: (formContainer.dataset.lock_for_update === '1')
+            }
+
+            Formio.setProjectUrl('{{ globalFormioUrl }}')
+            Formio.setBaseUrl('{{ globalFormioUrl }}')
+            Formio.setUser(null)
+            Formio.setToken(formContainer.dataset.token)
+
+            Formio.createForm(
+                formContainer,
+                formUrl,
+                formOptions
+            )
+        }
+    </script>
+
+{% endblock %}

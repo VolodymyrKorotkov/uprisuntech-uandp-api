@@ -1,0 +1,34 @@
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{% set processSubmissionId = getNativeTaskProcessSubmissionId(entity.instance) %}
+{% set task = entity.instance %}
+{% set formUrl = globalFormioUrl ~ '/' ~ entity.instance.form.formKey %}
+
+{% block main %}
+    {{ parent() }}
+
+    <div
+            id="formio"
+            data-url="{{ formUrl ~ '/submission/' ~ processSubmissionId }}"
+            data-token="{{ getFormioJwtToken() }}"
+    ></div>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            const formContainer = document.getElementById('formio')
+            const formUrl = formContainer.dataset.url
+            const formOptions = {
+                readOnly: true
+            }
+
+            Formio.setToken(formContainer.dataset.token)
+            Formio.setProjectUrl('{{ globalFormioUrl }}')
+            Formio.setBaseUrl('{{ globalFormioUrl }}')
+            Formio.createForm(
+                formContainer,
+                formUrl,
+                formOptions
+            )
+        }
+    </script>
+{% endblock %}

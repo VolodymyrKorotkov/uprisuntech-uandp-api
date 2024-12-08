@@ -1,0 +1,14 @@
+<?php declare(strict_types=1);
+
+namespace App\Service\OrganizationProvider;
+
+use Exception;
+use Throwable;
+
+final class UserRoleNotFoundException extends Exception
+{
+    public function __construct(int $code = 0, ?Throwable $previous = null)
+    {
+        parent::__construct('User role not found', $code, $previous);
+    }
+}

@@ -1,0 +1,36 @@
+FROM php:8.2-fpm AS base
+
+RUN apt-get update \
+    && apt-get install -y libzip-dev zip libpng-dev \
+    && docker-php-ext-install pdo pdo_mysql zip gd
+
+RUN usermod -u 1000 www-data && groupmod -g 1000 www-data && chown -R www-data:www-data /var/www/html
+
+RUN apt-get install -y libicu-dev && docker-php-ext-install intl
+
+RUN apt-get install -y libpq-dev  \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install pdo_pgsql pgsql
+RUN pwd
+COPY ./docker/php/eusphpei.tar /tmp/eusphpei.tar
+
+RUN mkdir /usr/lib/php/eusphpe -p && tar -xf /tmp/eusphpei.tar -C /usr/lib/php/eusphpe
+
+WORKDIR /var/www/html
+
+FROM composer:2.5.8 AS build
+WORKDIR /var/www/html
+
+COPY composer.json .
+COPY composer.lock .
+RUN composer install --no-scripts --ignore-platform-reqs
+COPY . .
+
+RUN composer dumpautoload --optimize
+
+
+FROM base AS final
+COPY --from=build /var/www/html /var/www/html
+
+CMD ["bash", "-c", "php-fpm"]
+
